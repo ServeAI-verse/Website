@@ -1,37 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ServeAI
 
-## Getting Started
+AI-powered restaurant analytics platform for small restaurants in Milwaukee.
 
-First, run the development server:
+## 🎯 Project Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+ServeAI provides actionable menu recommendations to help restaurant owners make data-driven decisions instead of guessing. Built for restaurants that need straightforward guidance, not just raw data.
+
+## 📁 Folder Structure
+
+```
+Website/
+├── app/                 # Next.js app (pages & API routes)
+│   ├── api/            # Backend API endpoints
+│   ├── layout.tsx      # Root layout
+│   ├── page.tsx        # Home page
+│   └── globals.css     # Global styles
+│
+├── components/         # React components
+├── lib/                # Utilities & helpers
+├── types/              # TypeScript types
+├── public/             # Static assets
+│
+├── package.json
+├── tsconfig.json
+└── next.config.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Quick Start
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Install dependencies
+npm install
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Run development server
+npm run dev
+```
 
-## Learn More
+Open [http://localhost:3000](http://localhost:3000)
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠️ Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Framework**: Next.js 16
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4
+- **Deployment**: Vercel (recommended)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📝 Core Features to Build
 
-## Deploy on Vercel
+1. **Authentication** - Restaurant owner login/signup
+2. **Dashboard** - KPIs and metrics overview
+3. **Menu Management** - CRUD operations for menu items
+4. **Analytics** - Sales trends and performance
+5. **AI Recommendations** - AI-generated insights
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🗂️ Project Context
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# Website
+**Target Users**: Small restaurant owners in Milwaukee  
+**Problem**: Guessing menu decisions due to lack of accessible analytics  
+**Solution**: AI-driven recommendations with specific, actionable guidance
+
+**Current Status**: Idea stage, 2 months of market research, 5 restaurant owners interviewed
+
+## 📖 Next Steps
+
+1. Build out pages in `app/`
+2. Create components in `components/`
+3. Add API routes in `app/api/`
+4. Define types in `types/`
+5. Add utilities in `lib/`
+
+See `STRUCTURE.md` for more details.
