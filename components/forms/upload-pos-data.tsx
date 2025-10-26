@@ -1,126 +1,189 @@
-'use client'
+"use client";
 
-import { useState, useRef } from 'react'
-import { Upload, FileText, X, CheckCircle, AlertCircle } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useState, useRef } from "react";
+import { Upload, FileText, X, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useApp } from "@/lib/context/app-context";
 
 export default function UploadPosData() {
-  const [posSystem, setPosSystem] = useState('')
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [isDragOver, setIsDragOver] = useState(false)
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
-  const [errorMessage, setErrorMessage] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { addMenuItem } = useApp();
+  const [posSystem, setPosSystem] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<
+    "idle" | "uploading" | "success" | "error"
+  >("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): string | null => {
     const allowedTypes = [
-      'text/csv',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    ]
-    
-    const allowedExtensions = ['.csv', '.xls', '.xlsx']
-    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
-    
-    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-      return 'Please select a CSV or Excel file (.csv, .xls, .xlsx)'
+      "text/csv",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ];
+
+    const allowedExtensions = [".csv", ".xls", ".xlsx"];
+    const fileExtension = file.name
+      .toLowerCase()
+      .substring(file.name.lastIndexOf("."));
+
+    if (
+      !allowedTypes.includes(file.type) &&
+      !allowedExtensions.includes(fileExtension)
+    ) {
+      return "Please select a CSV or Excel file (.csv, .xls, .xlsx)";
     }
-    
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit
-      return 'File size must be less than 10MB'
+
+    if (file.size > 10 * 1024 * 1024) {
+      // 10MB limit
+      return "File size must be less than 10MB";
     }
-    
-    return null
-  }
+
+    return null;
+  };
 
   const handleFileSelect = (file: File) => {
-    const error = validateFile(file)
+    const error = validateFile(file);
     if (error) {
-      setErrorMessage(error)
-      setUploadStatus('error')
-      return
+      setErrorMessage(error);
+      setUploadStatus("error");
+      return;
     }
-    
-    setSelectedFile(file)
-    setErrorMessage('')
-    setUploadStatus('idle')
-  }
 
-  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+    setSelectedFile(file);
+    setErrorMessage("");
+    setUploadStatus("idle");
+  };
+
+  const handleFileInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
     if (file) {
-      handleFileSelect(file)
+      handleFileSelect(file);
     }
-  }
+  };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    setIsDragOver(false)
-    
-    const file = event.dataTransfer.files[0]
+    event.preventDefault();
+    setIsDragOver(false);
+
+    const file = event.dataTransfer.files[0];
     if (file) {
-      handleFileSelect(file)
+      handleFileSelect(file);
     }
-  }
+  };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    setIsDragOver(true)
-  }
+    event.preventDefault();
+    setIsDragOver(true);
+  };
 
   const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    setIsDragOver(false)
-  }
+    event.preventDefault();
+    setIsDragOver(false);
+  };
 
   const handleChooseFileClick = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
   const handleRemoveFile = () => {
-    setSelectedFile(null)
-    setErrorMessage('')
-    setUploadStatus('idle')
+    setSelectedFile(null);
+    setErrorMessage("");
+    setUploadStatus("idle");
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = "";
     }
-  }
+  };
 
   const handleProcessData = async () => {
-    if (!selectedFile || !posSystem) return
-    
-    setUploadStatus('uploading')
-    setErrorMessage('')
-    
+    if (!selectedFile || !posSystem) return;
+
+    setUploadStatus("uploading");
+    setErrorMessage("");
+    setSuccessMessage("");
+
     try {
-      // Simulate file processing
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Here you would typically send the file to your API
-      // const formData = new FormData()
-      // formData.append('file', selectedFile)
-      // formData.append('posSystem', posSystem)
-      // const response = await fetch('/api/upload-pos-data', { method: 'POST', body: formData })
-      
-      setUploadStatus('success')
+      // Read file content
+      const fileContent = await selectedFile.text();
+
+      // Determine format
+      const format = selectedFile.name.toLowerCase().endsWith(".csv")
+        ? "csv"
+        : "text";
+
+      // Call AI API to analyze the POS data
+      const response = await fetch("/api/menu/analyze-pos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          data: fileContent,
+          format: format,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to process file");
+      }
+
+      const result = await response.json();
+
+      // Add parsed menu items to the app
+      result.menuItems.forEach((item: any) => {
+        addMenuItem({
+          name: item.name,
+          category: item.category,
+          cost: item.cost,
+          price: item.price,
+          salesCount: item.salesCount,
+        });
+      });
+
+      setUploadStatus("success");
+      setSuccessMessage(
+        result.summary ||
+          `Successfully imported ${result.menuItems.length} menu items!`
+      );
+
       // Reset form after successful upload
       setTimeout(() => {
-        setSelectedFile(null)
-        setPosSystem('')
-        setUploadStatus('idle')
+        setSelectedFile(null);
+        setPosSystem("");
+        setUploadStatus("idle");
+        setSuccessMessage("");
         if (fileInputRef.current) {
-          fileInputRef.current.value = ''
+          fileInputRef.current.value = "";
         }
-      }, 2000)
+      }, 3000);
     } catch (error) {
-      setUploadStatus('error')
-      setErrorMessage('Failed to process file. Please try again.')
+      console.error("Error processing file:", error);
+      setUploadStatus("error");
+      setErrorMessage(
+        "Failed to process file. Please ensure it contains valid menu data."
+      );
     }
-  }
+  };
 
   return (
     <Card>
@@ -157,13 +220,13 @@ export default function UploadPosData() {
         />
 
         {/* File upload area */}
-        <div 
+        <div
           className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-            isDragOver 
-              ? 'border-primary bg-primary/5' 
-              : selectedFile 
-                ? 'border-green-500 bg-green-50' 
-                : 'border-muted-foreground/25 hover:border-primary/50'
+            isDragOver
+              ? "border-primary bg-primary/5"
+              : selectedFile
+              ? "border-green-500 bg-green-50"
+              : "border-muted-foreground/25 hover:border-primary/50"
           }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -177,17 +240,19 @@ export default function UploadPosData() {
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-green-800">{selectedFile.name}</p>
+                  <p className="text-sm font-medium text-green-800">
+                    {selectedFile.name}
+                  </p>
                   <p className="text-xs text-green-600 mt-1">
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={(e) => {
-                    e.stopPropagation()
-                    handleRemoveFile()
+                    e.stopPropagation();
+                    handleRemoveFile();
                   }}
                   className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
@@ -201,10 +266,18 @@ export default function UploadPosData() {
                   <Upload className="h-8 w-8 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Drag and drop your file here</p>
-                  <p className="text-xs text-muted-foreground mt-1">or click to browse</p>
+                  <p className="text-sm font-medium">
+                    Drag and drop your file here
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    or click to browse
+                  </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <FileText className="mr-2 h-4 w-4" />
                   Choose File
                 </Button>
@@ -222,11 +295,12 @@ export default function UploadPosData() {
         )}
 
         {/* Success message */}
-        {uploadStatus === 'success' && (
+        {uploadStatus === "success" && (
           <Alert className="border-green-200 bg-green-50">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              File processed successfully! Your menu data has been updated.
+              {successMessage ||
+                "File processed successfully! Your menu data has been updated."}
             </AlertDescription>
           </Alert>
         )}
@@ -241,26 +315,26 @@ export default function UploadPosData() {
           </ul>
         </div>
 
-        <Button 
-          className="w-full" 
-          disabled={!posSystem || !selectedFile || uploadStatus === 'uploading'}
+        <Button
+          className="w-full"
+          disabled={!posSystem || !selectedFile || uploadStatus === "uploading"}
           onClick={handleProcessData}
         >
-          {uploadStatus === 'uploading' ? (
+          {uploadStatus === "uploading" ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
               Processing...
             </>
-          ) : uploadStatus === 'success' ? (
+          ) : uploadStatus === "success" ? (
             <>
               <CheckCircle className="mr-2 h-4 w-4" />
               Processed Successfully
             </>
           ) : (
-            'Process Data'
+            "Process Data"
           )}
         </Button>
       </CardContent>
     </Card>
-  )
+  );
 }
