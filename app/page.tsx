@@ -17,8 +17,12 @@ import {
   ChefHat,
   LineChart
 } from 'lucide-react'
+import { stackServerApp } from '@/stack/server'
+import { redirect } from 'next/navigation'
 
-export default function Home() {
+export default async function Home() {
+  // Check if user is authenticated
+  const user = await stackServerApp.getUser();
   return (
     <div className="min-h-screen">
       {/* Animated gradient background */}
@@ -41,15 +45,26 @@ export default function Home() {
               </span>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/overview">
-                <Button variant="ghost">Dashboard</Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90">
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
+              {user ? (
+                <Link href="/overview">
+                  <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                    Go to Dashboard
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/handler/sign-in">
+                    <Button variant="ghost">Sign In</Button>
+                  </Link>
+                  <Link href="/handler/sign-up">
+                    <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                      Get Started
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

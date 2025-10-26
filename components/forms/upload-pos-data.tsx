@@ -162,8 +162,7 @@ export default function UploadPosData() {
 
       setUploadStatus("success");
       setSuccessMessage(
-        result.summary ||
-          `Successfully imported ${result.menuItems.length} menu items!`
+        `${result.summary || `Successfully imported ${result.menuItems.length} menu items!`}\n\nDashboard statistics, charts, and analytics have been updated with the new data. Navigate to the Dashboard or Analytics pages to see the changes.`
       );
 
       // Reset form after successful upload

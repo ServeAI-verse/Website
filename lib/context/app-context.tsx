@@ -176,7 +176,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addMenuItem = (
     newItem: Omit<MenuItem, "id" | "revenue" | "margin" | "wastePercentage">
   ) => {
-    const id = (menuItems.length + 1).toString();
+    const id = `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const revenue = newItem.price * newItem.salesCount;
     const margin = ((newItem.price - newItem.cost) / newItem.price) * 100;
     const wastePercentage = Math.random() * 20;
@@ -189,7 +189,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ...newItem,
     };
 
-    setMenuItems((prev) => [...prev, menuItem]);
+    setMenuItems((prev) => {
+      const updatedItems = [...prev, menuItem];
+      
+      // Recalculate all derived data
+      setTimeout(() => {
+        const newDashboardStats = calculateDashboardStats(updatedItems, revenueData);
+        const newCategoryData = calculateCategoryData(updatedItems);
+        const newWasteData = calculateWasteData(updatedItems);
+        
+        setDashboardStats(newDashboardStats);
+        setCategoryData(newCategoryData);
+        setWasteData(newWasteData);
+      }, 0);
+      
+      return updatedItems;
+    });
   };
 
   const implementRecommendation = async (recommendationId: string) => {

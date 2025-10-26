@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { StackProvider, StackTheme } from "@stackframe/stack";
+import { stackClientApp } from "../stack/client";
 import localFont from "next/font/local";
 import "./globals.css";
 import { AppProvider } from "@/lib/context/app-context";
@@ -31,11 +33,11 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${satoshi.variable} antialiased`}
-      >
+      ><StackProvider app={stackClientApp}><StackTheme>
         <AppProvider>
           {children}
         </AppProvider>
-      </body>
+      </StackTheme></StackProvider></body>
     </html>
   );
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { Bell, ChevronDown, Check, CheckCheck } from 'lucide-react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,11 +14,33 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useApp } from '@/lib/context/app-context'
 import { formatDistanceToNow } from 'date-fns'
+import { stackClientApp } from '@/stack/client'
+import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const { notifications, markNotificationAsRead, markAllNotificationsAsRead } = useApp()
+  const user = stackClientApp.useUser()
+  const router = useRouter()
   
   const unreadCount = notifications.filter(n => !n.read).length
+  
+  // Get user initials for avatar
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return 'U'
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+  
+  const handleSignOut = async () => {
+    // Sign out using Stack Auth
+    if (user) {
+      await user.signOut()
+    }
+    router.push('/')
+  }
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6 relative">
       {/* Subtle gradient accent */}
@@ -102,22 +124,37 @@ export default function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10">
               <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                {user?.profileImageUrl && (
+                  <AvatarImage src={user.profileImageUrl} alt={user.displayName || 'User'} />
+                )}
                 <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-semibold">
-                  JD
+                  {getInitials(user?.displayName)}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm font-medium">John Doe</span>
+              <span className="text-sm font-medium">
+                {user?.displayName || user?.primaryEmail || 'User'}
+              </span>
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium">{user?.displayName || 'My Account'}</p>
+                <p className="text-xs text-muted-foreground">{user?.primaryEmail}</p>
+              </div>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>Billing</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
+              Profile Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
+              Restaurant Settings
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Log out</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
+              Sign Out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
