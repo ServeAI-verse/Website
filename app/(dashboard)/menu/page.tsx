@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import PageHeader from '@/components/layout/page-header'
 import UploadPosData from '@/components/forms/upload-pos-data'
 import ManualEntryForm from '@/components/forms/manual-entry-form'
@@ -14,10 +17,51 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Pencil, Trash2, ChefHat } from 'lucide-react'
-import { menuItems } from '@/lib/mock-data'
+import { menuItems as initialMenuItems } from '@/lib/mock-data'
 import { formatCurrency } from '@/lib/utils'
+import { MenuItem } from '@/types'
 
 export default function MenuPage() {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems)
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
+
+  const addMenuItem = (newItem: Omit<MenuItem, 'id' | 'revenue' | 'margin' | 'wastePercentage'>) => {
+    const id = (menuItems.length + 1).toString()
+    const revenue = newItem.price * newItem.salesCount
+    const margin = ((newItem.price - newItem.cost) / newItem.price) * 100
+    const wastePercentage = Math.random() * 20 // Mock waste percentage
+    
+    const menuItem: MenuItem = {
+      id,
+      revenue,
+      margin,
+      wastePercentage,
+      ...newItem
+    }
+    
+    setMenuItems(prev => [...prev, menuItem])
+  }
+
+  const updateMenuItem = (id: string, updatedItem: Omit<MenuItem, 'id' | 'revenue' | 'margin' | 'wastePercentage'>) => {
+    const revenue = updatedItem.price * updatedItem.salesCount
+    const margin = ((updatedItem.price - updatedItem.cost) / updatedItem.price) * 100
+    
+    setMenuItems(prev => prev.map(item => 
+      item.id === id 
+        ? { ...item, ...updatedItem, revenue, margin }
+        : item
+    ))
+    setEditingItem(null)
+  }
+
+  const deleteMenuItem = (id: string) => {
+    setMenuItems(prev => prev.filter(item => item.id !== id))
+  }
+
+  const handleEdit = (item: MenuItem) => {
+    setEditingItem(item)
+  }
+
   return (
     <div className="space-y-6 relative">
       {/* Gradient background accents */}
@@ -53,7 +97,12 @@ export default function MenuPage() {
         </TabsContent>
 
         <TabsContent value="manual">
-          <ManualEntryForm />
+          <ManualEntryForm 
+            onAddItem={addMenuItem} 
+            editingItem={editingItem} 
+            onUpdateItem={updateMenuItem} 
+            onCancelEdit={() => setEditingItem(null)} 
+          />
         </TabsContent>
       </Tabs>
 
@@ -97,10 +146,20 @@ export default function MenuPage() {
                   <TableCell>{formatCurrency(item.revenue)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
-                      <Button variant="ghost" size="icon">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleEdit(item)}
+                        className="hover:bg-blue-50 hover:text-blue-600"
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => deleteMenuItem(item.id)}
+                        className="hover:bg-red-50 hover:text-red-600"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
