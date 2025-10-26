@@ -44,7 +44,7 @@ export default function Home() {
               <Link href="/overview">
                 <Button variant="ghost">Dashboard</Button>
               </Link>
-              <Link href="/overview">
+              <Link href="/signup">
                 <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90">
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -373,7 +373,7 @@ export default function Home() {
             </CardHeader>
 
             <CardContent className="text-center pb-12 relative z-10">
-              <Link href="/overview">
+              <Link href="/signup">
                 <Button
                   size="lg"
                   variant="secondary"
