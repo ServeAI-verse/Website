@@ -1,14 +1,126 @@
 'use client'
 
-import { useState } from 'react'
-import { Upload, FileText } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Upload, FileText, X, CheckCircle, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function UploadPosData() {
   const [posSystem, setPosSystem] = useState('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const validateFile = (file: File): string | null => {
+    const allowedTypes = [
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ]
+    
+    const allowedExtensions = ['.csv', '.xls', '.xlsx']
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
+    
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+      return 'Please select a CSV or Excel file (.csv, .xls, .xlsx)'
+    }
+    
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      return 'File size must be less than 10MB'
+    }
+    
+    return null
+  }
+
+  const handleFileSelect = (file: File) => {
+    const error = validateFile(file)
+    if (error) {
+      setErrorMessage(error)
+      setUploadStatus('error')
+      return
+    }
+    
+    setSelectedFile(file)
+    setErrorMessage('')
+    setUploadStatus('idle')
+  }
+
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      handleFileSelect(file)
+    }
+  }
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragOver(false)
+    
+    const file = event.dataTransfer.files[0]
+    if (file) {
+      handleFileSelect(file)
+    }
+  }
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragOver(false)
+  }
+
+  const handleChooseFileClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null)
+    setErrorMessage('')
+    setUploadStatus('idle')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleProcessData = async () => {
+    if (!selectedFile || !posSystem) return
+    
+    setUploadStatus('uploading')
+    setErrorMessage('')
+    
+    try {
+      // Simulate file processing
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Here you would typically send the file to your API
+      // const formData = new FormData()
+      // formData.append('file', selectedFile)
+      // formData.append('posSystem', posSystem)
+      // const response = await fetch('/api/upload-pos-data', { method: 'POST', body: formData })
+      
+      setUploadStatus('success')
+      // Reset form after successful upload
+      setTimeout(() => {
+        setSelectedFile(null)
+        setPosSystem('')
+        setUploadStatus('idle')
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+      }, 2000)
+    } catch (error) {
+      setUploadStatus('error')
+      setErrorMessage('Failed to process file. Please try again.')
+    }
+  }
 
   return (
     <Card>
@@ -35,21 +147,89 @@ export default function UploadPosData() {
           </Select>
         </div>
 
-        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,.xls,.xlsx"
+          onChange={handleFileInputChange}
+          className="hidden"
+        />
+
+        {/* File upload area */}
+        <div 
+          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+            isDragOver 
+              ? 'border-primary bg-primary/5' 
+              : selectedFile 
+                ? 'border-green-500 bg-green-50' 
+                : 'border-muted-foreground/25 hover:border-primary/50'
+          }`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onClick={handleChooseFileClick}
+        >
           <div className="flex flex-col items-center space-y-3">
-            <div className="bg-primary/10 p-4 rounded-full">
-              <Upload className="h-8 w-8 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Drag and drop your file here</p>
-              <p className="text-xs text-muted-foreground mt-1">or click to browse</p>
-            </div>
-            <Button variant="outline" size="sm">
-              <FileText className="mr-2 h-4 w-4" />
-              Choose File
-            </Button>
+            {selectedFile ? (
+              <>
+                <div className="bg-green-100 p-4 rounded-full">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-green-800">{selectedFile.name}</p>
+                  <p className="text-xs text-green-600 mt-1">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleRemoveFile()
+                  }}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Remove File
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="bg-primary/10 p-4 rounded-full">
+                  <Upload className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Drag and drop your file here</p>
+                  <p className="text-xs text-muted-foreground mt-1">or click to browse</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Choose File
+                </Button>
+              </>
+            )}
           </div>
         </div>
+
+        {/* Error message */}
+        {errorMessage && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Success message */}
+        {uploadStatus === 'success' && (
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              File processed successfully! Your menu data has been updated.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="bg-muted/50 rounded-lg p-4 space-y-2">
           <h4 className="text-sm font-medium">Supported Formats</h4>
@@ -61,8 +241,24 @@ export default function UploadPosData() {
           </ul>
         </div>
 
-        <Button className="w-full" disabled={!posSystem}>
-          Process Data
+        <Button 
+          className="w-full" 
+          disabled={!posSystem || !selectedFile || uploadStatus === 'uploading'}
+          onClick={handleProcessData}
+        >
+          {uploadStatus === 'uploading' ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Processing...
+            </>
+          ) : uploadStatus === 'success' ? (
+            <>
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Processed Successfully
+            </>
+          ) : (
+            'Process Data'
+          )}
         </Button>
       </CardContent>
     </Card>
