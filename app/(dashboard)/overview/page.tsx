@@ -65,7 +65,7 @@ export default function OverviewPage() {
         />
         <StatsCard
           title="Waste Percentage"
-          value={dashboardStats.wastePercentage}
+          value={Math.round(dashboardStats.wastePercentage)}
           change={dashboardStats.wasteChange}
           icon={AlertTriangle}
           format="percentage"

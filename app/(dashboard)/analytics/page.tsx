@@ -45,6 +45,23 @@ export default function AnalyticsPage() {
   }
 
   const filteredRevenueData = getFilteredRevenueData()
+  
+  const getDescription = () => {
+    switch (timePeriod) {
+      case '1month':
+        return 'Daily revenue for the last month'
+      case '3months':
+        return 'Daily revenue for the last 3 months'
+      case '6months':
+        return 'Daily revenue for the last 6 months'
+      case '1year':
+        return 'Daily revenue for the last year'
+      case 'alltime':
+        return 'Daily revenue for all time'
+      default:
+        return 'Daily revenue for the last month'
+    }
+  }
   return (
     <div className="space-y-6 relative">
       {/* Gradient background accents */}
@@ -95,7 +112,16 @@ export default function AnalyticsPage() {
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-lg blur"></div>
             <div className="relative">
-              <RevenueChart data={filteredRevenueData} />
+              <RevenueChart 
+                data={filteredRevenueData} 
+                title={`Revenue - ${
+                  timePeriod === '1month' ? 'Last Month' :
+                  timePeriod === '3months' ? 'Last 3 Months' :
+                  timePeriod === '6months' ? 'Last 6 Months' :
+                  timePeriod === '1year' ? 'Last Year' : 'All Time'
+                }`}
+                description={getDescription()}
+              />
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">

@@ -2,6 +2,15 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { MenuItem, Recommendation, DashboardStats, RevenueData, CategoryData, WasteData } from '@/types'
+
+interface Notification {
+  id: string
+  title: string
+  message: string
+  type: 'info' | 'warning' | 'success' | 'error'
+  timestamp: Date
+  read: boolean
+}
 import { 
   menuItems as initialMenuItems, 
   recommendations as initialRecommendations, 
@@ -19,6 +28,7 @@ interface AppContextType {
   revenueData: RevenueData[]
   categoryData: CategoryData[]
   wasteData: WasteData[]
+  notifications: Notification[]
   
   // Actions
   refreshAnalysis: () => Promise<void>
@@ -26,6 +36,8 @@ interface AppContextType {
   deleteMenuItem: (id: string) => void
   addMenuItem: (item: Omit<MenuItem, 'id' | 'revenue' | 'margin' | 'wastePercentage'>) => void
   implementRecommendation: (recommendationId: string) => Promise<void>
+  markNotificationAsRead: (notificationId: string) => void
+  markAllNotificationsAsRead: () => void
   
   // UI State
   isRefreshing: boolean
@@ -43,6 +55,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [wasteData, setWasteData] = useState<WasteData[]>(initialWasteData)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  
+  // Initialize notifications
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: '1',
+      title: 'High Waste Alert',
+      message: 'Truffle Pasta has 25% waste rate. Consider removing from menu.',
+      type: 'warning',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      read: false
+    },
+    {
+      id: '2',
+      title: 'Revenue Milestone',
+      message: 'Congratulations! You\'ve reached $30,000 in monthly revenue.',
+      type: 'success',
+      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
+      read: false
+    },
+    {
+      id: '3',
+      title: 'New Recommendation',
+      message: 'AI suggests promoting Loaded Fries - high margin item with great potential.',
+      type: 'info',
+      timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
+      read: false
+    },
+    {
+      id: '4',
+      title: 'Menu Update',
+      message: 'Classic Burger price has been updated to $13.99 as recommended.',
+      type: 'success',
+      timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
+      read: true
+    }
+  ])
 
   const refreshAnalysis = async () => {
     setIsRefreshing(true)
@@ -156,6 +204,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const markNotificationAsRead = (notificationId: string) => {
+    setNotifications(prev => prev.map(notification => 
+      notification.id === notificationId 
+        ? { ...notification, read: true }
+        : notification
+    ))
+  }
+
+  const markAllNotificationsAsRead = () => {
+    setNotifications(prev => prev.map(notification => ({ ...notification, read: true })))
+  }
+
   return (
     <AppContext.Provider value={{
       menuItems,
@@ -164,11 +224,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       revenueData,
       categoryData,
       wasteData,
+      notifications,
       refreshAnalysis,
       updateMenuItem,
       deleteMenuItem,
       addMenuItem,
       implementRecommendation,
+      markNotificationAsRead,
+      markAllNotificationsAsRead,
       isRefreshing,
       lastUpdated
     }}>
@@ -220,7 +283,7 @@ function generateUpdatedMenuItems(currentItems: MenuItem[]): MenuItem[] {
 
 function generateNewRecommendations(menuItems: MenuItem[]): Recommendation[] {
   // Generate new recommendations based on current menu items
-  const newRecommendations = []
+  const newRecommendations: Recommendation[] = []
   
   // Find items with high waste percentage
   const highWasteItems = menuItems.filter(item => item.wastePercentage > 15)
