@@ -17,9 +17,46 @@ export default function RevenueChart({
   title = 'Revenue Trend',
   description = 'Daily revenue for the last 90 days'
 }: RevenueChartProps) {
+  // Determine the appropriate date format and tick interval based on data length
+  const getDateConfig = () => {
+    const dataLength = data.length
+    
+    if (dataLength <= 31) {
+      // Last month or less - show daily
+      return {
+        format: (date: string) => format(parseISO(date), 'MMM d'),
+        tickCount: Math.min(7, dataLength), // Show up to 7 ticks
+        interval: Math.max(1, Math.floor(dataLength / 7))
+      }
+    } else if (dataLength <= 90) {
+      // Last 3 months - show weekly
+      return {
+        format: (date: string) => format(parseISO(date), 'MMM d'),
+        tickCount: Math.min(6, dataLength),
+        interval: Math.max(1, Math.floor(dataLength / 6))
+      }
+    } else if (dataLength <= 365) {
+      // Last year - show monthly
+      return {
+        format: (date: string) => format(parseISO(date), 'MMM'),
+        tickCount: Math.min(12, dataLength),
+        interval: Math.max(1, Math.floor(dataLength / 12))
+      }
+    } else {
+      // All time - show quarterly
+      return {
+        format: (date: string) => format(parseISO(date), 'MMM yyyy'),
+        tickCount: Math.min(8, dataLength),
+        interval: Math.max(1, Math.floor(dataLength / 8))
+      }
+    }
+  }
+
+  const dateConfig = getDateConfig()
+  
   const formattedData = data.map(item => ({
     ...item,
-    displayDate: format(parseISO(item.date), 'MMM d'),
+    displayDate: dateConfig.format(item.date),
   }))
 
   return (
@@ -43,6 +80,8 @@ export default function RevenueChart({
               className="text-xs"
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
               tickLine={false}
+              interval={dateConfig.interval}
+              tickCount={dateConfig.tickCount}
             />
             <YAxis
               className="text-xs"

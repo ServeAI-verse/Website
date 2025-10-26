@@ -8,9 +8,10 @@ interface StatsCardProps {
   change?: number
   icon: LucideIcon
   format?: 'currency' | 'number' | 'percentage'
+  comparisonText?: string
 }
 
-export default function StatsCard({ title, value, change, icon: Icon, format = 'number' }: StatsCardProps) {
+export default function StatsCard({ title, value, change, icon: Icon, format = 'number', comparisonText = 'from last month' }: StatsCardProps) {
   const isPositive = change !== undefined && change > 0
   const isNegative = change !== undefined && change < 0
 
@@ -51,7 +52,7 @@ export default function StatsCard({ title, value, change, icon: Icon, format = '
             >
               {formatPercentage(change)}
             </span>
-            <span className="text-muted-foreground ml-1">from last month</span>
+            <span className="text-muted-foreground ml-1">{comparisonText}</span>
           </div>
         )}
       </CardContent>
