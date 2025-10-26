@@ -17,46 +17,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Pencil, Trash2, ChefHat } from 'lucide-react'
-import { menuItems as initialMenuItems } from '@/lib/mock-data'
 import { formatCurrency } from '@/lib/utils'
 import { MenuItem } from '@/types'
+import { useApp } from '@/lib/context/app-context'
 
 export default function MenuPage() {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems)
+  const { 
+    menuItems, 
+    addMenuItem, 
+    updateMenuItem, 
+    deleteMenuItem 
+  } = useApp()
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
-
-  const addMenuItem = (newItem: Omit<MenuItem, 'id' | 'revenue' | 'margin' | 'wastePercentage'>) => {
-    const id = (menuItems.length + 1).toString()
-    const revenue = newItem.price * newItem.salesCount
-    const margin = ((newItem.price - newItem.cost) / newItem.price) * 100
-    const wastePercentage = Math.random() * 20 // Mock waste percentage
-    
-    const menuItem: MenuItem = {
-      id,
-      revenue,
-      margin,
-      wastePercentage,
-      ...newItem
-    }
-    
-    setMenuItems(prev => [...prev, menuItem])
-  }
-
-  const updateMenuItem = (id: string, updatedItem: Omit<MenuItem, 'id' | 'revenue' | 'margin' | 'wastePercentage'>) => {
-    const revenue = updatedItem.price * updatedItem.salesCount
-    const margin = ((updatedItem.price - updatedItem.cost) / updatedItem.price) * 100
-    
-    setMenuItems(prev => prev.map(item => 
-      item.id === id 
-        ? { ...item, ...updatedItem, revenue, margin }
-        : item
-    ))
-    setEditingItem(null)
-  }
-
-  const deleteMenuItem = (id: string) => {
-    setMenuItems(prev => prev.filter(item => item.id !== id))
-  }
 
   const handleEdit = (item: MenuItem) => {
     setEditingItem(item)

@@ -1,11 +1,16 @@
+'use client'
+
+import { useState } from 'react'
 import PageHeader from '@/components/layout/page-header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { AlertCircle, TrendingUp, DollarSign, Package, RefreshCw, Sparkles } from 'lucide-react'
-import { recommendations } from '@/lib/mock-data'
 import { formatCurrency } from '@/lib/utils'
+import { useApp } from '@/lib/context/app-context'
+import RecommendationDetailsDialog from '@/components/dialogs/recommendation-details-dialog'
+import { Recommendation } from '@/types'
 
 const typeIcons = {
   remove: AlertCircle,
@@ -21,6 +26,14 @@ const priorityColors = {
 } as const
 
 export default function RecommendationsPage() {
+  const { 
+    recommendations, 
+    refreshAnalysis, 
+    implementRecommendation, 
+    isRefreshing, 
+    lastUpdated 
+  } = useApp()
+  
   const highPriority = recommendations.filter((r) => r.priority === 'high')
   const mediumPriority = recommendations.filter((r) => r.priority === 'medium')
   const lowPriority = recommendations.filter((r) => r.priority === 'low')
@@ -44,9 +57,14 @@ export default function RecommendationsPage() {
           </div>
           <p className="text-muted-foreground">Data-driven suggestions to optimize your menu and increase profits</p>
         </div>
-        <Button variant="outline" className="border-2 hover:border-primary/50 hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh Analysis
+        <Button 
+          variant="outline" 
+          className="border-2 hover:border-primary/50 hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5"
+          onClick={refreshAnalysis}
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Refreshing...' : 'Refresh Analysis'}
         </Button>
       </div>
 
@@ -97,8 +115,21 @@ export default function RecommendationsPage() {
   )
 }
 
-function RecommendationCard({ recommendation }: { recommendation: typeof recommendations[0] }) {
+function RecommendationCard({ recommendation }: { recommendation: Recommendation }) {
+  const { implementRecommendation } = useApp()
+  const [isImplementing, setIsImplementing] = useState(false)
   const Icon = typeIcons[recommendation.type]
+
+  const handleImplement = async () => {
+    setIsImplementing(true)
+    try {
+      await implementRecommendation(recommendation.id)
+    } catch (error) {
+      console.error('Failed to implement recommendation:', error)
+    } finally {
+      setIsImplementing(false)
+    }
+  }
 
   return (
     <Card>
@@ -147,13 +178,32 @@ function RecommendationCard({ recommendation }: { recommendation: typeof recomme
 
         <div className="flex items-center justify-between pt-2">
           <div className="text-sm text-muted-foreground">
-            Confidence: <span className="font-medium">{recommendation.confidence}%</span>
+            Confidence: <span className="font-medium">{Math.round(recommendation.confidence)}%</span>
           </div>
           <div className="space-x-2">
-            <Button variant="outline" size="sm">
-              View Details
+            <RecommendationDetailsDialog 
+              recommendation={recommendation} 
+              onImplement={implementRecommendation}
+            >
+              <Button variant="outline" size="sm">
+                View Details
+              </Button>
+            </RecommendationDetailsDialog>
+            <Button 
+              size="sm" 
+              onClick={handleImplement}
+              disabled={isImplementing}
+              className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+            >
+              {isImplementing ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                  Implementing...
+                </>
+              ) : (
+                'Implement'
+              )}
             </Button>
-            <Button size="sm">Implement</Button>
           </div>
         </div>
       </CardContent>

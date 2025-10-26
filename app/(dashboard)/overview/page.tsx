@@ -1,13 +1,25 @@
+'use client'
+
 import { DollarSign, TrendingUp, ShoppingCart, AlertTriangle, Sparkles } from 'lucide-react'
 import PageHeader from '@/components/layout/page-header'
 import StatsCard from '@/components/dashboard/stats-card'
 import QuickInsights from '@/components/dashboard/quick-insights'
 import RevenueChart from '@/components/charts/revenue-chart'
 import TopItemsChart from '@/components/charts/top-items-chart'
-import { dashboardStats, revenueData, menuItems } from '@/lib/mock-data'
 import { Badge } from '@/components/ui/badge'
+import { useApp } from '@/lib/context/app-context'
 
 export default function OverviewPage() {
+  const { dashboardStats, revenueData, menuItems, lastUpdated } = useApp()
+  
+  // Filter revenue data to show last month by default
+  const getLastMonthData = () => {
+    const now = new Date()
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+    return revenueData.filter(data => new Date(data.date) >= lastMonth)
+  }
+  
+  const lastMonthRevenueData = getLastMonthData()
   return (
     <div className="space-y-6 relative">
       {/* Gradient background accents */}
@@ -63,7 +75,7 @@ export default function OverviewPage() {
       {/* Revenue Chart */}
       <div className="relative">
         <div className="absolute -top-2 -left-2 w-full h-full bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg -z-10"></div>
-        <RevenueChart data={revenueData} />
+        <RevenueChart data={lastMonthRevenueData} title="Revenue - Last Month" description="Revenue trends for the past month" />
       </div>
 
       {/* Bottom Section */}

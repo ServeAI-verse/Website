@@ -30,7 +30,7 @@ export default function ProfitMarginChart({
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percentage }) => `${name}: ${percentage}%`}
+              label={({ name, percentage }) => `${name}: ${Math.round(percentage)}%`}
               outerRadius={80}
               fill="#8884d8"
               dataKey="value"
@@ -51,7 +51,7 @@ export default function ProfitMarginChart({
                           <span className="text-muted-foreground">Revenue:</span>
                           <span className="font-medium">{formatCurrency(data.value)}</span>
                           <span className="text-muted-foreground">Share:</span>
-                          <span className="font-medium">{data.percentage}%</span>
+                          <span className="font-medium">{Math.round(data.percentage)}%</span>
                         </div>
                       </div>
                     </div>
