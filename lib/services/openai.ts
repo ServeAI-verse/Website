@@ -6,7 +6,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+const MODEL = process.env.OPENAI_MODEL || "gpt-5-mini-2025-08-07";
 
 export interface MenuAnalysisInput {
   menuItems: MenuItem[];
@@ -110,7 +110,6 @@ Prioritize recommendations that will have the biggest positive impact on profita
         { role: "user", content: userPrompt },
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
     });
 
     const responseContent = completion.choices[0].message.content;
@@ -216,7 +215,6 @@ Return ONLY valid JSON in this format:
         { role: "user", content: userPrompt },
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
     });
 
     const responseContent = completion.choices[0].message.content;
