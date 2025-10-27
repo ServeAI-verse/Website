@@ -264,16 +264,16 @@ Return ONLY valid JSON in this exact format:
 Calculate revenue as price * salesCount and margin as ((price - cost) / price) * 100.
 If any fields are missing, make reasonable estimates based on similar items.`;
 
-  try {
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.3, // Lower temperature for more accurate parsing
-    });
+    try {
+      const completion = await openai.chat.completions.create({
+        model: MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        response_format: { type: "json_object" },
+        // Note: gpt-4o-mini only supports default temperature of 1
+      });
 
     const responseContent = completion.choices[0].message.content;
     if (!responseContent) {
@@ -371,12 +371,12 @@ Be conversational, helpful, and specific. Reference their actual menu items and 
       { role: "user", content: message },
     ];
 
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      messages,
-      temperature: 0.8,
-      max_tokens: 500,
-    });
+      const completion = await openai.chat.completions.create({
+        model: MODEL,
+        messages,
+        max_tokens: 500,
+        // Note: gpt-4o-mini uses default temperature
+      });
 
     return (
       completion.choices[0].message.content ||
