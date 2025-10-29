@@ -178,6 +178,9 @@ export default function OverviewPage() {
   
   const comparisonText = getComparisonText()
   
+  // Check if there's any data
+  const hasData = menuItems.length > 0
+  
   return (
     <div className="space-y-6 relative">
       {/* Gradient background accents */}
@@ -192,10 +195,12 @@ export default function OverviewPage() {
             </h1>
             <Badge variant="secondary" className="bg-gradient-to-r from-primary/10 to-accent/10">
               <Sparkles className="w-3 h-3 mr-1" />
-              Live Data
+              {hasData ? 'Live Data' : 'No Data'}
             </Badge>
           </div>
-          <p className="text-muted-foreground">Overview of your restaurant's performance</p>
+          <p className="text-muted-foreground">
+            {hasData ? "Overview of your restaurant's performance" : "Upload your menu data to see insights"}
+          </p>
         </div>
         <Select value={timePeriod} onValueChange={(value: TimePeriod) => setTimePeriod(value)}>
           <SelectTrigger className="w-[180px] border-2 hover:border-primary/50 hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5">

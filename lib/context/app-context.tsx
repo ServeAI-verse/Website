@@ -24,14 +24,22 @@ interface Notification {
   timestamp: Date;
   read: boolean;
 }
-import {
-  menuItems as initialMenuItems,
-  recommendations as initialRecommendations,
-  dashboardStats as initialDashboardStats,
-  revenueData as initialRevenueData,
-  categoryData as initialCategoryData,
-  wasteData as initialWasteData,
-} from "@/lib/mock-data";
+// Empty initial data - all data comes from CSV uploads
+const initialMenuItems: MenuItem[] = [];
+const initialRecommendations: Recommendation[] = [];
+const initialDashboardStats: DashboardStats = {
+  totalRevenue: 0,
+  netProfit: 0,
+  totalOrders: 0,
+  wastePercentage: 0,
+  revenueChange: 0,
+  profitChange: 0,
+  orderChange: 0,
+  wasteChange: 0,
+};
+const initialRevenueData: RevenueData[] = [];
+const initialCategoryData: CategoryData[] = [];
+const initialWasteData: WasteData[] = [];
 
 interface AppContextType {
   // Data
@@ -50,9 +58,13 @@ interface AppContextType {
   addMenuItem: (
     item: Omit<MenuItem, "id" | "revenue" | "margin" | "wastePercentage">
   ) => void;
+  replaceAllMenuItems: (
+    items: Omit<MenuItem, "id" | "revenue" | "margin" | "wastePercentage">[]
+  ) => void;
   implementRecommendation: (recommendationId: string) => Promise<void>;
   markNotificationAsRead: (notificationId: string) => void;
   markAllNotificationsAsRead: () => void;
+  resetAllData: () => void;
 
   // UI State
   isRefreshing: boolean;
@@ -62,58 +74,176 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
-  const [recommendations, setRecommendations] = useState<Recommendation[]>(
-    initialRecommendations
-  );
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats>(
-    initialDashboardStats
-  );
-  const [revenueData, setRevenueData] =
-    useState<RevenueData[]>(initialRevenueData);
-  const [categoryData, setCategoryData] =
-    useState<CategoryData[]>(initialCategoryData);
-  const [wasteData, setWasteData] = useState<WasteData[]>(initialWasteData);
+  // Load data from localStorage or use initial data
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('menuItems');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error('Failed to parse stored menuItems:', e);
+        }
+      }
+    }
+    return initialMenuItems;
+  });
+  
+  const [recommendations, setRecommendations] = useState<Recommendation[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('recommendations');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error('Failed to parse stored recommendations:', e);
+        }
+      }
+    }
+    return initialRecommendations;
+  });
+  
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('dashboardStats');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error('Failed to parse stored dashboardStats:', e);
+        }
+      }
+    }
+    return initialDashboardStats;
+  });
+  
+  const [revenueData, setRevenueData] = useState<RevenueData[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('revenueData');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error('Failed to parse stored revenueData:', e);
+        }
+      }
+    }
+    return initialRevenueData;
+  });
+  
+  const [categoryData, setCategoryData] = useState<CategoryData[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('categoryData');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error('Failed to parse stored categoryData:', e);
+        }
+      }
+    }
+    return initialCategoryData;
+  });
+  
+  const [wasteData, setWasteData] = useState<WasteData[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('wasteData');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error('Failed to parse stored wasteData:', e);
+        }
+      }
+    }
+    return initialWasteData;
+  });
+  
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('lastUpdated');
+      if (stored) {
+        try {
+          return new Date(stored);
+        } catch (e) {
+          console.error('Failed to parse stored lastUpdated:', e);
+        }
+      }
+    }
+    return null;
+  });
 
-  // Initialize notifications
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      title: "High Waste Alert",
-      message: "Truffle Pasta has 25% waste rate. Consider removing from menu.",
-      type: "warning",
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      read: false,
-    },
-    {
-      id: "2",
-      title: "Revenue Milestone",
-      message: "Congratulations! You've reached $30,000 in monthly revenue.",
-      type: "success",
-      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-      read: false,
-    },
-    {
-      id: "3",
-      title: "New Recommendation",
-      message:
-        "AI suggests promoting Loaded Fries - high margin item with great potential.",
-      type: "info",
-      timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
-      read: false,
-    },
-    {
-      id: "4",
-      title: "Menu Update",
-      message:
-        "Classic Burger price has been updated to $13.99 as recommended.",
-      type: "success",
-      timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
-      read: true,
-    },
-  ]);
+  // Persist data to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('menuItems', JSON.stringify(menuItems));
+    }
+  }, [menuItems]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('recommendations', JSON.stringify(recommendations));
+    }
+  }, [recommendations]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dashboardStats', JSON.stringify(dashboardStats));
+    }
+  }, [dashboardStats]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('revenueData', JSON.stringify(revenueData));
+    }
+  }, [revenueData]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('categoryData', JSON.stringify(categoryData));
+    }
+  }, [categoryData]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wasteData', JSON.stringify(wasteData));
+    }
+  }, [wasteData]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && lastUpdated) {
+      localStorage.setItem('lastUpdated', lastUpdated.toISOString());
+    }
+  }, [lastUpdated]);
+
+  // Initialize notifications with localStorage support - start empty
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('notifications');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          // Convert timestamp strings back to Date objects
+          return parsed.map((notif: any) => ({
+            ...notif,
+            timestamp: new Date(notif.timestamp),
+          }));
+        } catch (e) {
+          console.error('Failed to parse stored notifications:', e);
+        }
+      }
+    }
+    // Start with no notifications - they will be generated based on actual data
+    return [];
+  });
+
+  // Persist notifications to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('notifications', JSON.stringify(notifications));
+    }
+  }, [notifications]);
 
   const refreshAnalysis = async () => {
     setIsRefreshing(true);
@@ -162,15 +292,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const updateMenuItem = (id: string, item: Partial<MenuItem>) => {
-    setMenuItems((prev) =>
-      prev.map((menuItem) =>
-        menuItem.id === id ? { ...menuItem, ...item } : menuItem
-      )
-    );
+    setMenuItems((prev) => {
+      const updatedItems = prev.map((menuItem) =>
+        menuItem.id === id ? { 
+          ...menuItem, 
+          ...item,
+          // Recalculate derived fields if price, cost, or salesCount changed
+          revenue: (item.price || menuItem.price) * (item.salesCount || menuItem.salesCount),
+          margin: ((item.price || menuItem.price) - (item.cost || menuItem.cost)) / (item.price || menuItem.price) * 100
+        } : menuItem
+      );
+      
+      // Recalculate all derived data
+      setTimeout(() => {
+        const newRevenueData = generateRevenueDataFromMenuItems(updatedItems);
+        const newDashboardStats = calculateDashboardStats(updatedItems, newRevenueData);
+        const newCategoryData = calculateCategoryData(updatedItems);
+        const newWasteData = calculateWasteData(updatedItems);
+        
+        setRevenueData(newRevenueData);
+        setDashboardStats(newDashboardStats);
+        setCategoryData(newCategoryData);
+        setWasteData(newWasteData);
+        setLastUpdated(new Date());
+      }, 0);
+      
+      return updatedItems;
+    });
   };
 
   const deleteMenuItem = (id: string) => {
-    setMenuItems((prev) => prev.filter((item) => item.id !== id));
+    setMenuItems((prev) => {
+      const updatedItems = prev.filter((item) => item.id !== id);
+      
+      // Recalculate all derived data
+      setTimeout(() => {
+        const newRevenueData = generateRevenueDataFromMenuItems(updatedItems);
+        const newDashboardStats = calculateDashboardStats(updatedItems, newRevenueData);
+        const newCategoryData = calculateCategoryData(updatedItems);
+        const newWasteData = calculateWasteData(updatedItems);
+        
+        setRevenueData(newRevenueData);
+        setDashboardStats(newDashboardStats);
+        setCategoryData(newCategoryData);
+        setWasteData(newWasteData);
+        setLastUpdated(new Date());
+      }, 0);
+      
+      return updatedItems;
+    });
   };
 
   const addMenuItem = (
@@ -192,19 +362,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMenuItems((prev) => {
       const updatedItems = [...prev, menuItem];
       
-      // Recalculate all derived data
+      // Recalculate all derived data based on uploaded menu items
       setTimeout(() => {
-        const newDashboardStats = calculateDashboardStats(updatedItems, revenueData);
+        const newRevenueData = generateRevenueDataFromMenuItems(updatedItems);
+        const newDashboardStats = calculateDashboardStats(updatedItems, newRevenueData);
         const newCategoryData = calculateCategoryData(updatedItems);
         const newWasteData = calculateWasteData(updatedItems);
         
+        setRevenueData(newRevenueData);
         setDashboardStats(newDashboardStats);
         setCategoryData(newCategoryData);
         setWasteData(newWasteData);
+        setLastUpdated(new Date());
       }, 0);
       
       return updatedItems;
     });
+  };
+
+  const replaceAllMenuItems = (
+    items: Omit<MenuItem, "id" | "revenue" | "margin" | "wastePercentage">[]
+  ) => {
+    const menuItems: MenuItem[] = items.map((item) => {
+      const id = `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const revenue = item.price * item.salesCount;
+      const margin = ((item.price - item.cost) / item.price) * 100;
+      const wastePercentage = Math.random() * 20;
+
+      return {
+        id,
+        revenue,
+        margin,
+        wastePercentage,
+        ...item,
+      };
+    });
+
+    setMenuItems(menuItems);
+    
+    // Recalculate all derived data based on new menu items
+    setTimeout(() => {
+      const newRevenueData = generateRevenueDataFromMenuItems(menuItems);
+      const newDashboardStats = calculateDashboardStats(menuItems, newRevenueData);
+      const newCategoryData = calculateCategoryData(menuItems);
+      const newWasteData = calculateWasteData(menuItems);
+      
+      setRevenueData(newRevenueData);
+      setDashboardStats(newDashboardStats);
+      setCategoryData(newCategoryData);
+      setWasteData(newWasteData);
+      setLastUpdated(new Date());
+    }, 0);
   };
 
   const implementRecommendation = async (recommendationId: string) => {
@@ -284,6 +492,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const resetAllData = () => {
+    // Clear localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('menuItems');
+      localStorage.removeItem('recommendations');
+      localStorage.removeItem('dashboardStats');
+      localStorage.removeItem('revenueData');
+      localStorage.removeItem('categoryData');
+      localStorage.removeItem('wasteData');
+      localStorage.removeItem('notifications');
+      localStorage.removeItem('lastUpdated');
+    }
+    
+    // Reset state to empty (no dummy data)
+    setMenuItems([]);
+    setRecommendations([]);
+    setDashboardStats({
+      totalRevenue: 0,
+      netProfit: 0,
+      totalOrders: 0,
+      wastePercentage: 0,
+      revenueChange: 0,
+      profitChange: 0,
+      orderChange: 0,
+      wasteChange: 0,
+    });
+    setRevenueData([]);
+    setCategoryData([]);
+    setWasteData([]);
+    setLastUpdated(null);
+    setNotifications([]);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -298,9 +539,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateMenuItem,
         deleteMenuItem,
         addMenuItem,
+        replaceAllMenuItems,
         implementRecommendation,
         markNotificationAsRead,
         markAllNotificationsAsRead,
+        resetAllData,
         isRefreshing,
         lastUpdated,
       }}
@@ -319,6 +562,50 @@ export function useApp() {
 }
 
 // Helper functions for generating new data
+function generateRevenueDataFromMenuItems(menuItems: MenuItem[]): RevenueData[] {
+  // Calculate total revenue from all menu items
+  const totalRevenue = menuItems.reduce((sum, item) => sum + item.revenue, 0);
+  const avgItemPrice = menuItems.reduce((sum, item) => sum + item.price, 0) / menuItems.length;
+  const totalSales = menuItems.reduce((sum, item) => sum + item.salesCount, 0);
+  
+  // Generate 90 days of revenue data based on actual menu data
+  return Array.from({ length: 90 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (89 - i));
+    
+    // Distribute the total revenue across 90 days with realistic variation
+    const baseDailyRevenue = totalRevenue / 90;
+    
+    // Add realistic patterns:
+    // - Weekly pattern (weekends have higher sales)
+    const dayOfWeek = date.getDay();
+    const weekendMultiplier = (dayOfWeek === 5 || dayOfWeek === 6) ? 1.4 : 
+                             (dayOfWeek === 0) ? 1.2 : 1.0;
+    
+    // - Growth trend (more recent days have slightly higher revenue)
+    const growthFactor = 1 + (i / 90) * 0.15; // 15% growth over the period
+    
+    // - Random daily variation
+    const randomVariation = 0.85 + Math.random() * 0.3; // ±15% daily variation
+    
+    const revenue = baseDailyRevenue * weekendMultiplier * growthFactor * randomVariation;
+    
+    // Calculate orders based on average item price
+    const orders = Math.floor(revenue / avgItemPrice);
+    
+    // Calculate profit based on average margin
+    const avgMargin = menuItems.reduce((sum, item) => sum + item.margin, 0) / menuItems.length;
+    const profit = revenue * (avgMargin / 100);
+
+    return {
+      date: date.toISOString().split("T")[0],
+      revenue: Math.round(revenue * 100) / 100,
+      orders,
+      profit: Math.round(profit * 100) / 100,
+    };
+  });
+}
+
 function generateNewRevenueData(): RevenueData[] {
   return Array.from({ length: 90 }, (_, i) => {
     const date = new Date();

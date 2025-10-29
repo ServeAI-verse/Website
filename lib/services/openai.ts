@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import OpenAI from "openai";
 import { MenuItem, Recommendation, RevenueData, WasteData } from "@/types";
 
@@ -239,39 +240,53 @@ export async function analyzePOSData(
 ): Promise<{ menuItems: MenuItem[]; summary: string }> {
   const systemPrompt = `You are an expert at parsing and analyzing POS (Point of Sale) system data.
 Extract menu items with their costs, prices, and sales information.
-Be thorough and accurate in your extraction.`;
+Be thorough, accurate, and ALWAYS provide valid JSON output. Never ask for clarification - make reasonable assumptions.`;
 
-  const userPrompt = `Parse this ${format.toUpperCase()} POS data and extract menu items:
+  const userPrompt = `Parse this ${format.toUpperCase()} POS data and extract menu items.
 
+IMPORTANT INSTRUCTIONS:
+1. Use Item_Name or similar field for the item name (NOT Item_Category)
+2. If cost is missing, estimate it as 40% of the selling price
+3. If sales count is missing, estimate based on data or use a reasonable default
+4. Group by individual menu items, not by category
+5. Make reasonable assumptions - DO NOT ask for clarification
+6. ALWAYS return valid JSON in the exact format specified below
+
+DATA:
 ${rawData}
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON in this exact format (no explanations, no questions):
 {
   "menuItems": [
     {
       "name": "Item name",
-      "category": "Category (e.g., Burgers, Drinks, Appetizers)",
+      "category": "Category (e.g., Burgers, Drinks, Appetizers, Desserts, etc.)",
       "cost": cost_per_item_in_dollars,
       "price": selling_price_in_dollars,
       "salesCount": number_of_sales
     }
   ],
-  "summary": "Brief summary of what was parsed (e.g., 'Parsed 25 menu items from January 2024 sales data')"
+  "summary": "Brief summary of what was parsed (e.g., 'Parsed 25 menu items from sales data')"
 }
 
-Calculate revenue as price * salesCount and margin as ((price - cost) / price) * 100.
-If any fields are missing, make reasonable estimates based on similar items.`;
+RULES:
+- Extract EVERY unique item from the data
+- If cost is missing: cost = price * 0.4
+- If salesCount is missing: use quantity, count, or estimate 100
+- Category should be logical food/drink categories
+- All numbers must be numeric (not strings)
+- Return valid JSON immediately - no questions or errors allowed`;
 
-    try {
-      const completion = await openai.chat.completions.create({
-        model: MODEL,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-        // Note: gpt-4o-mini only supports default temperature of 1
-      });
+  try {
+    const completion = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      // Note: gpt-4o-mini only supports default temperature of 1
+    });
 
     const responseContent = completion.choices[0].message.content;
     if (!responseContent) {
@@ -280,28 +295,85 @@ If any fields are missing, make reasonable estimates based on similar items.`;
 
     const parsed = JSON.parse(responseContent);
 
-    // Transform to full MenuItem objects
-    const menuItems: MenuItem[] = parsed.menuItems.map(
-      (item: any, index: number) => ({
+    // Log the parsed response for debugging
+    console.log("Parsed OpenAI response:", JSON.stringify(parsed, null, 2));
+
+    // Check if AI returned an error or clarification request
+    if (parsed.error || parsed.message) {
+      console.error("AI returned error/clarification:", parsed);
+      throw new Error(
+        "Unable to parse the CSV file automatically. Please ensure your CSV has columns for item names, prices, and sales counts."
+      );
+    }
+
+    // Validate the response structure
+    if (!parsed.menuItems || !Array.isArray(parsed.menuItems)) {
+      console.error("Invalid response structure from OpenAI:", parsed);
+      throw new Error(
+        "The CSV format could not be recognized. Please ensure it has proper headers and data rows."
+      );
+    }
+
+    if (parsed.menuItems.length === 0) {
+      throw new Error(
+        "No menu items found in the uploaded file. Please check your CSV format."
+      );
+    }
+
+    // Transform to full MenuItem objects with validation
+    const menuItems: MenuItem[] = parsed.menuItems
+      .filter((item: any) => {
+        // Filter out items with missing required fields
+        if (
+          !item.name ||
+          typeof item.price !== "number" ||
+          typeof item.cost !== "number"
+        ) {
+          console.warn("Skipping invalid item:", item);
+          return false;
+        }
+        return true;
+      })
+      .map((item: any, index: number) => ({
         id: `pos-${Date.now()}-${index}`,
         name: item.name,
-        category: item.category,
+        category: item.category || "Uncategorized",
         cost: item.cost,
         price: item.price,
-        salesCount: item.salesCount,
-        revenue: item.price * item.salesCount,
+        salesCount: item.salesCount || 0,
+        revenue: item.price * (item.salesCount || 0),
         margin: ((item.price - item.cost) / item.price) * 100,
         wastePercentage: Math.random() * 10, // Default estimate
-      })
-    );
+      }));
+
+    if (menuItems.length === 0) {
+      throw new Error(
+        "Could not parse any valid menu items from the file. Please check your CSV format."
+      );
+    }
 
     return {
       menuItems,
-      summary: parsed.summary,
+      summary:
+        parsed.summary || `Successfully parsed ${menuItems.length} menu items`,
     };
   } catch (error) {
     console.error("Error analyzing POS data:", error);
-    throw new Error("Failed to analyze POS data");
+
+    // Provide more helpful error messages
+    if (error instanceof SyntaxError) {
+      throw new Error(
+        "Failed to parse OpenAI response. The AI service may be experiencing issues. Please try again."
+      );
+    }
+
+    if (error instanceof Error) {
+      throw error; // Re-throw our custom errors
+    }
+
+    throw new Error(
+      "Failed to analyze POS data. Please ensure your CSV file is properly formatted."
+    );
   }
 }
 
@@ -369,12 +441,12 @@ Be conversational, helpful, and specific. Reference their actual menu items and 
       { role: "user", content: message },
     ];
 
-      const completion = await openai.chat.completions.create({
-        model: MODEL,
-        messages,
-        max_tokens: 500,
-        // Note: gpt-4o-mini uses default temperature
-      });
+    const completion = await openai.chat.completions.create({
+      model: MODEL,
+      messages,
+      max_tokens: 500,
+      // Note: gpt-4o-mini uses default temperature
+    });
 
     return (
       completion.choices[0].message.content ||

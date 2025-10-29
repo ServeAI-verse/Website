@@ -87,59 +87,69 @@ export default function MenuPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Cost</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Margin</TableHead>
-                <TableHead>Sales</TableHead>
-                <TableHead>Revenue</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {menuItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{item.category}</Badge>
-                  </TableCell>
-                  <TableCell>{formatCurrency(item.cost)}</TableCell>
-                  <TableCell>{formatCurrency(item.price)}</TableCell>
-                  <TableCell>
-                    <Badge variant={item.margin > 70 ? 'default' : 'secondary'}>
-                      {item.margin.toFixed(1)}%
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{item.salesCount}</TableCell>
-                  <TableCell>{formatCurrency(item.revenue)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleEdit(item)}
-                        className="hover:bg-blue-50 hover:text-blue-600"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => deleteMenuItem(item.id)}
-                        className="hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {menuItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <ChefHat className="h-16 w-16 text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Menu Items Yet</h3>
+              <p className="text-muted-foreground mb-4 max-w-md">
+                Upload your POS data or manually add menu items to get started with AI-powered insights and recommendations.
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Item Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Cost</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Margin</TableHead>
+                  <TableHead>Sales</TableHead>
+                  <TableHead>Revenue</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {menuItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{item.category}</Badge>
+                    </TableCell>
+                    <TableCell>{formatCurrency(item.cost)}</TableCell>
+                    <TableCell>{formatCurrency(item.price)}</TableCell>
+                    <TableCell>
+                      <Badge variant={item.margin > 70 ? 'default' : 'secondary'}>
+                        {item.margin.toFixed(1)}%
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{item.salesCount}</TableCell>
+                    <TableCell>{formatCurrency(item.revenue)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleEdit(item)}
+                          className="hover:bg-blue-50 hover:text-blue-600"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => deleteMenuItem(item.id)}
+                          className="hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

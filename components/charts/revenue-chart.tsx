@@ -66,8 +66,13 @@ export default function RevenueChart({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={350}>
-          <AreaChart data={formattedData}>
+        {data.length === 0 ? (
+          <div className="flex items-center justify-center h-[350px] text-muted-foreground">
+            <p>No revenue data available. Upload your menu data to see trends.</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={350}>
+            <AreaChart data={formattedData}>
             <defs>
               <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
@@ -123,6 +128,7 @@ export default function RevenueChart({
             />
           </AreaChart>
         </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   )

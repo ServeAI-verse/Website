@@ -22,7 +22,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useApp } from "@/lib/context/app-context";
 
 export default function UploadPosData() {
-  const { addMenuItem } = useApp();
+  const { replaceAllMenuItems } = useApp();
   const [posSystem, setPosSystem] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -149,20 +149,25 @@ export default function UploadPosData() {
 
       const result = await response.json();
 
-      // Add parsed menu items to the app
-      result.menuItems.forEach((item: any) => {
-        addMenuItem({
-          name: item.name,
-          category: item.category,
-          cost: item.cost,
-          price: item.price,
-          salesCount: item.salesCount,
-        });
-      });
+      // Replace all menu items with the uploaded data
+      const itemsToAdd = result.menuItems.map((item: any) => ({
+        name: item.name,
+        category: item.category,
+        cost: item.cost,
+        price: item.price,
+        salesCount: item.salesCount,
+      }));
+      
+      replaceAllMenuItems(itemsToAdd);
 
       setUploadStatus("success");
+      
+      // Show success message with item count
+      const itemCount = result.menuItems.length;
+      const summaryText = result.summary || `Successfully imported ${itemCount} menu items!`;
+      
       setSuccessMessage(
-        `${result.summary || `Successfully imported ${result.menuItems.length} menu items!`}\n\nDashboard statistics, charts, and analytics have been updated with the new data. Navigate to the Dashboard or Analytics pages to see the changes.`
+        `${summaryText}\n\nAll dashboard statistics, charts, and analytics have been updated with your uploaded data. Navigate to the Dashboard or Analytics pages to see your real data.\n\nYour data is now saved and will persist even after page reloads.`
       );
 
       // Reset form after successful upload
